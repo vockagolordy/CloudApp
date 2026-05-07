@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CloudApp</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/app}">CloudApp</a>
+    <form th:action="@{/logout}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <button class="link-button" type="submit">Выйти</button>
+    </form>
+</header>
+<main class="workspace">
+    <section class="workspace-head">
+        <div>
+            <h1>Моё хранилище</h1>
+            <p class="muted">Вы вошли как <span th:text="${email}">user@example.com</span></p>
+        </div>
+    </section>
+    <section class="empty-state">
+        <h2>Аккаунт и сессия работают</h2>
+        <p>На следующем шаге здесь появятся папки, иерархия и CRUD для Folder.</p>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Вход - CloudApp</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<main class="auth-shell">
+    <section class="auth-panel">
+        <h1>Вход</h1>
+        <p class="muted">Войдите, чтобы перейти к своему облачному хранилищу.</p>
+
+        <div class="notice success" th:if="${message}" th:text="${message}"></div>
+        <div class="notice" th:if="${param.error}">Неверный email или пароль</div>
+        <div class="notice success" th:if="${param.logout}">Вы вышли из аккаунта</div>
+
+        <form th:action="@{/login}" method="post" class="form">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+            <label for="username">Email</label>
+            <input id="username" name="username" type="email" autocomplete="email" required>
+
+            <label for="password">Пароль</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+            <button type="submit">Войти</button>
+        </form>
+
+        <p class="switch">Нет аккаунта? <a th:href="@{/register}">Зарегистрироваться</a></p>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="header" class="topbar">
+    <a class="brand" th:href="@{/app}">CloudApp</a>
+    <nav class="nav">
+        <a th:href="@{/login}">Вход</a>
+        <a th:href="@{/register}">Регистрация</a>
+    </nav>
+</header>
+</body>
+</html>
