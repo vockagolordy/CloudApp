@@ -1,0 +1,36 @@
+services:
+  app:
+    build: .
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/cloudapp
+      DB_USER: cloudapp
+      DB_PASSWORD: cloudapp
+      REDIS_HOST: redis
+      CLOUDAPP_STORAGE_ROOT: /storage
+    ports:
+      - "8080:8080"
+    volumes:
+      - cloudapp_storage:/storage
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: cloudapp
+      POSTGRES_PASSWORD: cloudapp
+      POSTGRES_USER: cloudapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+  cloudapp_storage:

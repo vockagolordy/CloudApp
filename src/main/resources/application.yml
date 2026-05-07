@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: CloudApp
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/cloudapp}
+    username: ${DB_USER:cloudapp}
+    password: ${DB_PASSWORD:cloudapp}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:25MB}
+      max-request-size: ${MAX_REQUEST_SIZE:30MB}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  session:
+    store-type: redis
+  cache:
+    type: redis
+
+server:
+  error:
+    whitelabel:
+      enabled: false
+
+cloudapp:
+  storage-root: ${CLOUDAPP_STORAGE_ROOT:storage}
+
+logging:
+  level:
+    org.example.cloudapp: INFO
