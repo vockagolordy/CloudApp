@@ -1,6 +1,6 @@
 package org.example.cloudapp.config;
 
-import org.example.cloudapp.security.CloudUserDetailsService;
+import org.example.cloudapp.service.security.CloudUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;

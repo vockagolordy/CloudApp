@@ -163,6 +163,133 @@ button:hover {
     margin-top: 20px;
 }
 
+.breadcrumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.breadcrumbs a {
+    color: var(--muted);
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.folder-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.secondary-action {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 0 14px;
+    background: #fff;
+    color: var(--text);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.folder-actions {
+    margin-top: 18px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.inline-form,
+.rename-form {
+    display: flex;
+    gap: 10px;
+}
+
+.inline-form input {
+    flex: 1;
+}
+
+.folder-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.folder-row {
+    display: grid;
+    grid-template-columns: 1fr minmax(260px, 380px) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+
+.folder-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.folder-link strong,
+.folder-link small {
+    display: block;
+}
+
+.folder-link small {
+    color: var(--muted);
+    margin-top: 3px;
+}
+
+.folder-icon {
+    width: 34px;
+    height: 26px;
+    flex: 0 0 auto;
+    border-radius: 5px;
+    background: #e8b84e;
+    position: relative;
+}
+
+.folder-icon::before {
+    content: "";
+    position: absolute;
+    top: -5px;
+    left: 3px;
+    width: 16px;
+    height: 7px;
+    border-radius: 4px 4px 0 0;
+    background: #d9a537;
+}
+
+.danger-button {
+    background: var(--danger);
+}
+
+.danger-button:hover {
+    background: #8f1b13;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 @media (max-width: 640px) {
     .topbar {
         padding: 0 16px;
@@ -170,5 +297,15 @@ button:hover {
 
     .workspace {
         padding: 20px 16px;
+    }
+
+    .folder-title-row,
+    .inline-form,
+    .rename-form {
+        flex-direction: column;
+    }
+
+    .folder-row {
+        grid-template-columns: 1fr;
     }
 }

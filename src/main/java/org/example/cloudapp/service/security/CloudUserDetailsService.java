@@ -1,4 +1,4 @@
-package org.example.cloudapp.security;
+package org.example.cloudapp.service.security;
 
 import org.example.cloudapp.entity.User;
 import org.example.cloudapp.repository.UserRepository;

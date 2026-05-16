@@ -43,4 +43,10 @@ public class UserService {
         user.setRoles(Set.of(role));
         userRepository.save(user);
     }
+
+    @Transactional(readOnly = true)
+    public User findByEmail(String email) {
+        return userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new AppException("Пользователь не найден"));
+    }
 }
