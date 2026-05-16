@@ -81,7 +81,10 @@ public class FolderController {
     }
 
     @PostMapping("/folders/{id}/delete")
-    public String delete(@PathVariable Long id, Authentication authentication, RedirectAttributes redirectAttributes) {
+    public String delete(@PathVariable Long id,
+                         @RequestParam(required = false) Long currentId,
+                         Authentication authentication,
+                         RedirectAttributes redirectAttributes) {
         var user = userService.findByEmail(authentication.getName());
         try {
             Long parentId = folderService.deleteFolder(id, user);
@@ -89,7 +92,7 @@ public class FolderController {
             return "redirect:/folders/" + parentId;
         } catch (AppException ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
-            return "redirect:/app";
+            return currentId == null ? "redirect:/app" : "redirect:/folders/" + currentId;
         }
     }
 }

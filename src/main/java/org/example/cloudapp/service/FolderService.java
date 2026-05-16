@@ -115,23 +115,19 @@ public class FolderService {
     }
 
     private String normalizeName(String name) {
-        return name == null ? "" : name.trim();
+        String normalized = name == null ? "" : name.trim();
+        if (normalized.isBlank()) {
+            throw new AppException("Название папки не может быть пустым");
+        }
+        return normalized;
     }
 
     private void ensureUniqueName(User owner, Folder parent, String name, Long currentFolderId) {
-        boolean duplicate = folderRepository.existsByOwnerAndParentAndNameIgnoreCase(owner, parent, name);
-        if (!duplicate) {
-            return;
-        }
-        if (currentFolderId == null) {
+        boolean duplicate = currentFolderId == null
+                ? folderRepository.existsByOwnerAndParentAndNameIgnoreCase(owner, parent, name)
+                : folderRepository.existsByOwnerAndParentAndNameIgnoreCaseAndIdNot(owner, parent, name, currentFolderId);
+        if (duplicate) {
             throw new AppException("Папка с таким названием уже есть");
         }
-        folderRepository.findByOwnerAndParentOrderByNameAsc(owner, parent).stream()
-                .filter(folder -> folder.getName().equalsIgnoreCase(name))
-                .filter(folder -> !folder.getId().equals(currentFolderId))
-                .findAny()
-                .ifPresent(folder -> {
-                    throw new AppException("Папка с таким названием уже есть");
-                });
     }
 }
