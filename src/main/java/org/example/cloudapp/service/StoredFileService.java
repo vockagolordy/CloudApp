@@ -1,10 +1,12 @@
 package org.example.cloudapp.service;
 
 import org.example.cloudapp.dto.StoredFileDto;
+import org.example.cloudapp.entity.AccessLevel;
 import org.example.cloudapp.entity.Folder;
 import org.example.cloudapp.entity.StoredFile;
 import org.example.cloudapp.entity.User;
 import org.example.cloudapp.exception.AppException;
+import org.example.cloudapp.form.ShareForm;
 import org.example.cloudapp.repository.StoredFileRepository;
 import org.example.cloudapp.util.mapper.StoredFileMapper;
 import org.springframework.core.io.Resource;
@@ -20,13 +22,18 @@ public class StoredFileService {
     private final StorageService storageService;
     private final FolderService folderService;
     private final StoredFileMapper storedFileMapper;
+    private final AccessService accessService;
+    private final UserService userService;
 
     public StoredFileService(StoredFileRepository storedFileRepository, StorageService storageService,
-                             FolderService folderService, StoredFileMapper storedFileMapper) {
+                             FolderService folderService, StoredFileMapper storedFileMapper,
+                             AccessService accessService, UserService userService) {
         this.storedFileRepository = storedFileRepository;
         this.storageService = storageService;
         this.folderService = folderService;
         this.storedFileMapper = storedFileMapper;
+        this.accessService = accessService;
+        this.userService = userService;
     }
 
     @Transactional
@@ -35,8 +42,8 @@ public class StoredFileService {
             throw new AppException("Выберите файл для загрузки");
         }
 
-        Folder folder = folderService.getOwnedFolder(folderId, user);
-        StorageService.StoredBinary binary = storageService.save(user.getId(), upload);
+        Folder folder = folderService.getEditableFolder(folderId, user);
+        StorageService.StoredBinary binary = storageService.save(folder.getOwner().getId(), upload);
         String originalName = originalName(upload);
 
         StoredFile file = new StoredFile();
@@ -47,25 +54,35 @@ public class StoredFileService {
         file.setContentType(upload.getContentType() == null ? MediaType.APPLICATION_OCTET_STREAM_VALUE : upload.getContentType());
         file.setExtension(extension(originalName));
         file.setSize(upload.getSize());
-        file.setOwner(user);
+        file.setOwner(folder.getOwner());
         file.setFolder(folder);
         return storedFileMapper.toDto(storedFileRepository.save(file));
     }
 
     @Transactional(readOnly = true)
     public DownloadedFile download(Long fileId, User user) {
-        StoredFile file = getOwnedFile(fileId, user);
+        StoredFile file = getReadableFile(fileId, user);
         Resource resource = storageService.load(file.getOwner().getId(), file.getStorageKey());
         return new DownloadedFile(file.getDisplayName(), file.getContentType(), resource);
     }
 
-    private StoredFile getOwnedFile(Long fileId, User user) {
-        StoredFile file = storedFileRepository.findById(fileId)
-                .orElseThrow(() -> new AppException("Файл не найден"));
-        if (!file.getOwner().getId().equals(user.getId())) {
-            throw new AppException("Нет доступа к этому файлу");
-        }
+    @Transactional
+    public void shareFile(Long fileId, ShareForm form, User owner) {
+        StoredFile file = findFile(fileId);
+        User target = userService.findByEmail(form.email());
+        AccessLevel level = form.accessLevel() == null ? AccessLevel.READ : form.accessLevel();
+        accessService.grantFile(file, target, level, owner);
+    }
+
+    private StoredFile getReadableFile(Long fileId, User user) {
+        StoredFile file = findFile(fileId);
+        accessService.requireFileRead(file, user);
         return file;
+    }
+
+    private StoredFile findFile(Long fileId) {
+        return storedFileRepository.findById(fileId)
+                .orElseThrow(() -> new AppException("Файл не найден"));
     }
 
     private String originalName(MultipartFile upload) {

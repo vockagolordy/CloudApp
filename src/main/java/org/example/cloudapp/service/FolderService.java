@@ -5,9 +5,11 @@ import java.util.Collections;
 import java.util.List;
 import org.example.cloudapp.dto.FolderDto;
 import org.example.cloudapp.dto.FolderPageDto;
+import org.example.cloudapp.entity.AccessLevel;
 import org.example.cloudapp.entity.Folder;
 import org.example.cloudapp.entity.User;
 import org.example.cloudapp.exception.AppException;
+import org.example.cloudapp.form.ShareForm;
 import org.example.cloudapp.repository.FolderRepository;
 import org.example.cloudapp.repository.StoredFileRepository;
 import org.example.cloudapp.util.mapper.FolderMapper;
@@ -22,15 +24,19 @@ public class FolderService {
     private final StoredFileRepository storedFileRepository;
     private final StoredFileMapper storedFileMapper;
     private final StorageService storageService;
+    private final AccessService accessService;
+    private final UserService userService;
 
     public FolderService(FolderRepository folderRepository, FolderMapper folderMapper,
                          StoredFileRepository storedFileRepository, StoredFileMapper storedFileMapper,
-                         StorageService storageService) {
+                         StorageService storageService, AccessService accessService, UserService userService) {
         this.folderRepository = folderRepository;
         this.folderMapper = folderMapper;
         this.storedFileRepository = storedFileRepository;
         this.storedFileMapper = storedFileMapper;
         this.storageService = storageService;
+        this.accessService = accessService;
+        this.userService = userService;
     }
 
     @Transactional
@@ -47,49 +53,60 @@ public class FolderService {
 
     @Transactional(readOnly = true)
     public FolderPageDto getFolderPage(Long folderId, User user) {
-        Folder current = getOwnedFolder(folderId, user);
-        List<FolderDto> children = folderRepository.findByOwnerAndParentOrderByNameAsc(user, current)
+        Folder current = getReadableFolder(folderId, user);
+        List<FolderDto> children = folderRepository.findByParentOrderByNameAsc(current)
                 .stream()
+                .filter(child -> accessService.canRead(child, user))
                 .map(folderMapper::toDto)
                 .toList();
 
         FolderDto parent = current.getParent() == null ? null : folderMapper.toDto(current.getParent());
         var files = storedFileRepository.findByFolderOrderByDisplayNameAsc(current).stream()
+                .filter(file -> accessService.canRead(file, user))
                 .map(storedFileMapper::toDto)
                 .toList();
-        return new FolderPageDto(folderMapper.toDto(current), parent, breadcrumbs(current), children, files);
+        boolean canEdit = accessService.canEdit(current, user);
+        boolean canDelete = accessService.isOwner(current, user) && !current.isRoot();
+        return new FolderPageDto(folderMapper.toDto(current), parent, breadcrumbs(current), children, files, canEdit, canDelete);
     }
 
     @Transactional
     public FolderDto createFolder(Long parentId, String name, User user) {
-        Folder parent = getOwnedFolder(parentId, user);
+        Folder parent = getEditableFolder(parentId, user);
         String normalizedName = normalizeName(name);
-        ensureUniqueName(user, parent, normalizedName, null);
+        ensureUniqueName(parent, normalizedName, null);
 
         Folder folder = new Folder();
         folder.setName(normalizedName);
-        folder.setOwner(user);
+        folder.setOwner(parent.getOwner());
         folder.setParent(parent);
         folder.setRoot(false);
-        return folderMapper.toDto(folderRepository.save(folder));
+        Folder saved = folderRepository.save(folder);
+        if (!accessService.isOwner(parent, user)) {
+            accessService.grantFolder(saved, user, AccessLevel.EDIT, parent.getOwner());
+        }
+        return folderMapper.toDto(saved);
     }
 
     @Transactional
     public FolderDto renameFolder(Long folderId, String name, User user) {
-        Folder folder = getOwnedFolder(folderId, user);
+        Folder folder = getEditableFolder(folderId, user);
         if (folder.isRoot()) {
             throw new AppException("Корневую папку нельзя переименовать");
         }
 
         String normalizedName = normalizeName(name);
-        ensureUniqueName(user, folder.getParent(), normalizedName, folder.getId());
+        ensureUniqueName(folder.getParent(), normalizedName, folder.getId());
         folder.setName(normalizedName);
         return folderMapper.toDto(folder);
     }
 
     @Transactional
     public Long deleteFolder(Long folderId, User user) {
-        Folder folder = getOwnedFolder(folderId, user);
+        Folder folder = getReadableFolder(folderId, user);
+        if (!accessService.isOwner(folder, user)) {
+            throw new AppException("Удалять папку может только владелец");
+        }
         if (folder.isRoot()) {
             throw new AppException("Корневую папку нельзя удалить");
         }
@@ -99,8 +116,16 @@ public class FolderService {
         return parentId;
     }
 
+    @Transactional
+    public void shareFolder(Long folderId, ShareForm form, User owner) {
+        Folder folder = getReadableFolder(folderId, owner);
+        User target = userService.findByEmail(form.email());
+        AccessLevel level = form.accessLevel() == null ? AccessLevel.READ : form.accessLevel();
+        accessService.grantFolder(folder, target, level, owner);
+    }
+
     private void deleteSubtree(Folder folder, User user) {
-        List<Folder> children = folderRepository.findByOwnerAndParentOrderByNameAsc(user, folder);
+        List<Folder> children = folderRepository.findByParentOrderByNameAsc(folder);
         for (Folder child : children) {
             deleteSubtree(child, user);
         }
@@ -111,13 +136,22 @@ public class FolderService {
     }
 
     @Transactional(readOnly = true)
-    public Folder getOwnedFolder(Long folderId, User user) {
-        Folder folder = folderRepository.findById(folderId)
-                .orElseThrow(() -> new AppException("Папка не найдена"));
-        if (!folder.getOwner().getId().equals(user.getId())) {
-            throw new AppException("Нет доступа к этой папке");
-        }
+    public Folder getReadableFolder(Long folderId, User user) {
+        Folder folder = findFolder(folderId);
+        accessService.requireFolderRead(folder, user);
         return folder;
+    }
+
+    @Transactional(readOnly = true)
+    public Folder getEditableFolder(Long folderId, User user) {
+        Folder folder = findFolder(folderId);
+        accessService.requireFolderEdit(folder, user);
+        return folder;
+    }
+
+    private Folder findFolder(Long folderId) {
+        return folderRepository.findById(folderId)
+                .orElseThrow(() -> new AppException("Папка не найдена"));
     }
 
     private List<FolderDto> breadcrumbs(Folder folder) {
@@ -139,10 +173,10 @@ public class FolderService {
         return normalized;
     }
 
-    private void ensureUniqueName(User owner, Folder parent, String name, Long currentFolderId) {
+    private void ensureUniqueName(Folder parent, String name, Long currentFolderId) {
         boolean duplicate = currentFolderId == null
-                ? folderRepository.existsByOwnerAndParentAndNameIgnoreCase(owner, parent, name)
-                : folderRepository.existsByOwnerAndParentAndNameIgnoreCaseAndIdNot(owner, parent, name, currentFolderId);
+                ? folderRepository.existsByParentAndNameIgnoreCase(parent, name)
+                : folderRepository.existsByParentAndNameIgnoreCaseAndIdNot(parent, name, currentFolderId);
         if (duplicate) {
             throw new AppException("Папка с таким названием уже есть");
         }

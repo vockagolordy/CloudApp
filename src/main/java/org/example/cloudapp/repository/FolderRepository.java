@@ -11,9 +11,15 @@ public interface FolderRepository extends JpaRepository<Folder, Long> {
 
     List<Folder> findByOwnerAndParentOrderByNameAsc(User owner, Folder parent);
 
+    List<Folder> findByParentOrderByNameAsc(Folder parent);
+
     long countByParent(Folder parent);
 
     boolean existsByOwnerAndParentAndNameIgnoreCase(User owner, Folder parent, String name);
 
     boolean existsByOwnerAndParentAndNameIgnoreCaseAndIdNot(User owner, Folder parent, String name, Long id);
+
+    boolean existsByParentAndNameIgnoreCase(Folder parent, String name);
+
+    boolean existsByParentAndNameIgnoreCaseAndIdNot(Folder parent, String name, Long id);
 }

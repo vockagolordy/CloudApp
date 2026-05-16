@@ -1,6 +1,8 @@
 package org.example.cloudapp.controller;
 
+import jakarta.validation.Valid;
 import org.example.cloudapp.exception.AppException;
+import org.example.cloudapp.form.ShareForm;
 import org.example.cloudapp.service.StoredFileService;
 import org.example.cloudapp.service.UserService;
 import org.springframework.http.ContentDisposition;
@@ -9,7 +11,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -52,5 +56,27 @@ public class FileController {
                 .contentType(MediaType.parseMediaType(file.contentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .body(file.resource());
+    }
+
+    @PostMapping("/files/{id}/share")
+    public String share(@PathVariable Long id,
+                        @RequestParam Long currentId,
+                        @Valid @ModelAttribute("shareForm") ShareForm form,
+                        BindingResult bindingResult,
+                        Authentication authentication,
+                        RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("error", "Введите email пользователя для доступа");
+            return "redirect:/folders/" + currentId;
+        }
+
+        var user = userService.findByEmail(authentication.getName());
+        try {
+            storedFileService.shareFile(id, form, user);
+            redirectAttributes.addFlashAttribute("message", "Доступ к файлу выдан");
+        } catch (AppException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/folders/" + currentId;
     }
 }

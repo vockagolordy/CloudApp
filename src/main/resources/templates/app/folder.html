@@ -35,8 +35,9 @@
                th:href="@{/folders/{id}(id=${page.parent.id})}">Назад</a>
         </div>
 
-        <div class="current-folder-actions" th:if="${!page.current.root}">
-            <form th:action="@{/folders/{id}/rename(id=${page.current.id})}" method="post" class="rename-form">
+        <div class="current-folder-actions" th:if="${page.canEditCurrent}">
+            <form th:action="@{/folders/{id}/rename(id=${page.current.id})}" method="post" class="rename-form"
+                  th:if="${!page.current.root}">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <input type="hidden" name="currentId" th:value="${page.current.id}">
                 <label class="sr-only" for="current-folder-name">Новое название текущей папки</label>
@@ -44,19 +45,33 @@
                 <button type="submit">Переименовать</button>
             </form>
 
-            <form th:action="@{/folders/{id}/delete(id=${page.current.id})}" method="post">
+            <form th:action="@{/folders/{id}/delete(id=${page.current.id})}" method="post"
+                  th:if="${page.canDeleteCurrent}">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <input type="hidden" name="currentId" th:value="${page.current.id}">
                 <button class="danger-button" type="submit"
                         onclick="return confirm('Удалить текущую папку и все вложенные папки?')">Удалить текущую</button>
             </form>
         </div>
+
+        <form th:action="@{/folders/{id}/share(id=${page.current.id})}" method="post" class="share-form"
+              th:if="${page.canDeleteCurrent}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="currentId" th:value="${page.current.id}">
+            <label class="sr-only" for="folder-share-email">Email пользователя</label>
+            <input id="folder-share-email" name="email" type="email" placeholder="email для доступа к папке" required>
+            <select name="accessLevel" aria-label="Уровень доступа">
+                <option value="READ">READ</option>
+                <option value="EDIT">EDIT</option>
+            </select>
+            <button type="submit">Поделиться папкой</button>
+        </form>
     </section>
 
     <div class="notice success" th:if="${message}" th:text="${message}"></div>
     <div class="notice" th:if="${error}" th:text="${error}"></div>
 
-    <section class="folder-actions">
+    <section class="folder-actions" th:if="${page.canEditCurrent}">
         <form th:action="@{/folders}" th:object="${folderForm}" method="post" class="inline-form">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" name="parentId" th:value="${page.current.id}">
@@ -90,7 +105,8 @@
                 </span>
             </a>
 
-            <form th:action="@{/folders/{id}/rename(id=${folder.id})}" method="post" class="rename-form">
+            <form th:action="@{/folders/{id}/rename(id=${folder.id})}" method="post" class="rename-form"
+                  th:if="${page.canEditCurrent}">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <input type="hidden" name="currentId" th:value="${page.current.id}">
                 <label class="sr-only" th:for="'rename-' + ${folder.id}">Новое название</label>
@@ -98,7 +114,7 @@
                 <button type="submit">Сохранить</button>
             </form>
 
-            <form th:action="@{/folders/{id}/delete(id=${folder.id})}" method="post">
+            <form th:action="@{/folders/{id}/delete(id=${folder.id})}" method="post" th:if="${page.canDeleteCurrent}">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <input type="hidden" name="currentId" th:value="${page.current.id}">
                 <button class="danger-button" type="submit"
@@ -126,6 +142,20 @@
                     </small>
                 </span>
             </div>
+
+            <form th:action="@{/files/{id}/share(id=${file.id})}" method="post" class="share-form"
+                  th:if="${page.canDeleteCurrent}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <input type="hidden" name="currentId" th:value="${page.current.id}">
+                <label class="sr-only" th:for="'file-share-email-' + ${file.id}">Email пользователя</label>
+                <input th:id="'file-share-email-' + ${file.id}" name="email" type="email" placeholder="email для доступа" required>
+                <select name="accessLevel" aria-label="Уровень доступа">
+                    <option value="READ">READ</option>
+                    <option value="EDIT">EDIT</option>
+                </select>
+                <button type="submit">Поделиться</button>
+            </form>
+
             <a class="secondary-action" th:href="@{/files/{id}/download(id=${file.id})}">Скачать</a>
         </article>
     </section>

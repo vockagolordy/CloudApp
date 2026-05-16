@@ -216,13 +216,24 @@ button:hover {
 }
 
 .inline-form,
-.rename-form {
+.rename-form,
+.share-form {
     display: flex;
     gap: 10px;
 }
 
-.inline-form input {
+.inline-form input,
+.share-form input {
     flex: 1;
+}
+
+.share-form select {
+    min-height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 9px 11px;
+    background: #fff;
+    font: inherit;
 }
 
 .folder-list {
@@ -249,7 +260,7 @@ button:hover {
 }
 
 .file-row {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(220px, 1fr) minmax(320px, 420px) auto;
 }
 
 .folder-link,
@@ -353,7 +364,8 @@ button:hover {
     .folder-title-row,
     .current-folder-actions,
     .inline-form,
-    .rename-form {
+    .rename-form,
+    .share-form {
         display: flex;
         flex-direction: column;
     }

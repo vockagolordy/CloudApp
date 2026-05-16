@@ -3,6 +3,7 @@ package org.example.cloudapp.controller;
 import jakarta.validation.Valid;
 import org.example.cloudapp.exception.AppException;
 import org.example.cloudapp.form.FolderForm;
+import org.example.cloudapp.form.ShareForm;
 import org.example.cloudapp.service.FolderService;
 import org.example.cloudapp.service.UserService;
 import org.springframework.security.core.Authentication;
@@ -33,6 +34,9 @@ public class FolderController {
         model.addAttribute("page", folderService.getFolderPage(id, user));
         if (!model.containsAttribute("folderForm")) {
             model.addAttribute("folderForm", new FolderForm(""));
+        }
+        if (!model.containsAttribute("shareForm")) {
+            model.addAttribute("shareForm", new ShareForm("", null));
         }
         return "app/folder";
     }
@@ -94,5 +98,27 @@ public class FolderController {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
             return currentId == null ? "redirect:/app" : "redirect:/folders/" + currentId;
         }
+    }
+
+    @PostMapping("/folders/{id}/share")
+    public String share(@PathVariable Long id,
+                        @RequestParam Long currentId,
+                        @Valid @ModelAttribute("shareForm") ShareForm form,
+                        BindingResult bindingResult,
+                        Authentication authentication,
+                        RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("error", "Введите email пользователя для доступа");
+            return "redirect:/folders/" + currentId;
+        }
+
+        var user = userService.findByEmail(authentication.getName());
+        try {
+            folderService.shareFolder(id, form, user);
+            redirectAttributes.addFlashAttribute("message", "Доступ к папке выдан");
+        } catch (AppException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/folders/" + currentId;
     }
 }
