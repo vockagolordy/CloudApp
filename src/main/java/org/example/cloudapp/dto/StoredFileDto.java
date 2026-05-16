@@ -1,0 +1,14 @@
+package org.example.cloudapp.dto;
+
+import java.time.Instant;
+
+public record StoredFileDto(
+        Long id,
+        String displayName,
+        String originalName,
+        String contentType,
+        String extension,
+        long size,
+        Instant updatedAt
+) {
+}

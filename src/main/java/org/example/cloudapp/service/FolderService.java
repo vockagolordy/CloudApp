@@ -9,7 +9,9 @@ import org.example.cloudapp.entity.Folder;
 import org.example.cloudapp.entity.User;
 import org.example.cloudapp.exception.AppException;
 import org.example.cloudapp.repository.FolderRepository;
+import org.example.cloudapp.repository.StoredFileRepository;
 import org.example.cloudapp.util.mapper.FolderMapper;
+import org.example.cloudapp.util.mapper.StoredFileMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +19,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class FolderService {
     private final FolderRepository folderRepository;
     private final FolderMapper folderMapper;
+    private final StoredFileRepository storedFileRepository;
+    private final StoredFileMapper storedFileMapper;
+    private final StorageService storageService;
 
-    public FolderService(FolderRepository folderRepository, FolderMapper folderMapper) {
+    public FolderService(FolderRepository folderRepository, FolderMapper folderMapper,
+                         StoredFileRepository storedFileRepository, StoredFileMapper storedFileMapper,
+                         StorageService storageService) {
         this.folderRepository = folderRepository;
         this.folderMapper = folderMapper;
+        this.storedFileRepository = storedFileRepository;
+        this.storedFileMapper = storedFileMapper;
+        this.storageService = storageService;
     }
 
     @Transactional
@@ -44,7 +54,10 @@ public class FolderService {
                 .toList();
 
         FolderDto parent = current.getParent() == null ? null : folderMapper.toDto(current.getParent());
-        return new FolderPageDto(folderMapper.toDto(current), parent, breadcrumbs(current), children);
+        var files = storedFileRepository.findByFolderOrderByDisplayNameAsc(current).stream()
+                .map(storedFileMapper::toDto)
+                .toList();
+        return new FolderPageDto(folderMapper.toDto(current), parent, breadcrumbs(current), children, files);
     }
 
     @Transactional
@@ -91,10 +104,14 @@ public class FolderService {
         for (Folder child : children) {
             deleteSubtree(child, user);
         }
+        var files = storedFileRepository.findByFolderOrderByDisplayNameAsc(folder);
+        files.forEach(file -> storageService.delete(file.getOwner().getId(), file.getStorageKey()));
+        storedFileRepository.deleteAll(files);
         folderRepository.delete(folder);
     }
 
-    private Folder getOwnedFolder(Long folderId, User user) {
+    @Transactional(readOnly = true)
+    public Folder getOwnedFolder(Long folderId, User user) {
         Folder folder = folderRepository.findById(folderId)
                 .orElseThrow(() -> new AppException("Папка не найдена"));
         if (!folder.getOwner().getId().equals(user.getId())) {

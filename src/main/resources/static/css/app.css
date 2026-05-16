@@ -206,6 +206,8 @@ button:hover {
 }
 
 .folder-actions {
+    display: grid;
+    gap: 12px;
     margin-top: 18px;
     background: var(--panel);
     border: 1px solid var(--line);
@@ -229,7 +231,13 @@ button:hover {
     margin-top: 18px;
 }
 
-.folder-row {
+.section-title {
+    font-size: 18px;
+    margin: 8px 0 0;
+}
+
+.folder-row,
+.file-row {
     display: grid;
     grid-template-columns: 1fr minmax(260px, 380px) auto;
     align-items: center;
@@ -240,7 +248,12 @@ button:hover {
     border-radius: 8px;
 }
 
-.folder-link {
+.file-row {
+    grid-template-columns: 1fr auto;
+}
+
+.folder-link,
+.file-main {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -255,6 +268,16 @@ button:hover {
 }
 
 .folder-link small {
+    color: var(--muted);
+    margin-top: 3px;
+}
+
+.file-main strong,
+.file-main small {
+    display: block;
+}
+
+.file-main small {
     color: var(--muted);
     margin-top: 3px;
 }
@@ -277,6 +300,25 @@ button:hover {
     height: 7px;
     border-radius: 4px 4px 0 0;
     background: #d9a537;
+}
+
+.file-icon {
+    width: 28px;
+    height: 34px;
+    flex: 0 0 auto;
+    border-radius: 4px;
+    background: #dfe8f6;
+    border: 1px solid #b8c9e1;
+    position: relative;
+}
+
+.file-icon::after {
+    content: "";
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    border-top: 10px solid #fff;
+    border-left: 10px solid #b8c9e1;
 }
 
 .danger-button {
@@ -317,6 +359,10 @@ button:hover {
     }
 
     .folder-row {
+        grid-template-columns: 1fr;
+    }
+
+    .file-row {
         grid-template-columns: 1fr;
     }
 }

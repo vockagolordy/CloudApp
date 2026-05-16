@@ -1,6 +1,9 @@
 HELP.md
 cloudapp.md
 target/
+storage/
+logs/
+*.log
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

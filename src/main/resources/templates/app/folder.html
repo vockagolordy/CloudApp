@@ -62,13 +62,22 @@
             <input type="hidden" name="parentId" th:value="${page.current.id}">
             <label class="sr-only" for="name">Название новой папки</label>
             <input id="name" type="text" th:field="*{name}" placeholder="Новая папка" required maxlength="120">
-            <button type="submit">Создать</button>
+            <button type="submit">Создать папку</button>
+        </form>
+
+        <form th:action="@{/files}" method="post" enctype="multipart/form-data" class="inline-form">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="folderId" th:value="${page.current.id}">
+            <label class="sr-only" for="file">Файл для загрузки</label>
+            <input id="file" name="file" type="file" required>
+            <button type="submit">Загрузить файл</button>
         </form>
     </section>
 
     <section class="folder-list" aria-label="Папки">
+        <h2 class="section-title">Папки</h2>
         <div class="empty-state" th:if="${#lists.isEmpty(page.children)}">
-            <h2>Здесь пока нет папок</h2>
+            <h3>Здесь пока нет папок</h3>
             <p>Создайте первую папку, чтобы начать собирать структуру хранилища.</p>
         </div>
 
@@ -95,6 +104,29 @@
                 <button class="danger-button" type="submit"
                         onclick="return confirm('Удалить папку и все вложенные папки?')">Удалить</button>
             </form>
+        </article>
+    </section>
+
+    <section class="folder-list" aria-label="Файлы">
+        <h2 class="section-title">Файлы</h2>
+        <div class="empty-state" th:if="${#lists.isEmpty(page.files)}">
+            <h3>Файлов пока нет</h3>
+            <p>Загрузите файл, и его метаданные появятся в этой папке.</p>
+        </div>
+
+        <article class="file-row" th:each="file : ${page.files}">
+            <div class="file-main">
+                <span class="file-icon" aria-hidden="true"></span>
+                <span>
+                    <strong th:text="${file.displayName}">report.pdf</strong>
+                    <small>
+                        <span th:text="${file.contentType}">application/pdf</span>
+                        ·
+                        <span th:text="${#numbers.formatDecimal(file.size / 1024.0, 1, 1)} + ' KB'">12.0 KB</span>
+                    </small>
+                </span>
+            </div>
+            <a class="secondary-action" th:href="@{/files/{id}/download(id=${file.id})}">Скачать</a>
         </article>
     </section>
 </main>
