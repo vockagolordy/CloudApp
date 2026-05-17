@@ -14,6 +14,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -30,6 +31,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AppException.class)
     public Object app(AppException ex, HttpServletRequest request, Model model) {
         return handle(ex.getMessage(), List.of(), HttpStatus.BAD_REQUEST, request, model);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public Object missingResource(NoResourceFoundException ex, HttpServletRequest request, Model model) {
+        return handle("Ресурс не найден", List.of(), HttpStatus.NOT_FOUND, request, model);
     }
 
     @ExceptionHandler(Exception.class)
