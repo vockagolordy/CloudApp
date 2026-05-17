@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ошибка - CloudApp</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" th:href="@{/app}">CloudApp</a>
+</header>
+<main class="auth-shell">
+    <section class="auth-panel">
+        <h1 th:text="'Ошибка ' + ${status}">Ошибка</h1>
+        <p class="muted" th:text="${message}">Что-то пошло не так</p>
+        <ul class="error-list" th:if="${details != null and !#lists.isEmpty(details)}">
+            <li th:each="detail : ${details}" th:text="${detail}">detail</li>
+        </ul>
+        <a class="secondary-action" th:href="@{/app}">Вернуться в приложение</a>
+    </section>
+</main>
+</body>
+</html>

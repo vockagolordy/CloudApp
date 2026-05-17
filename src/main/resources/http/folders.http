@@ -1,0 +1,25 @@
+### Read folder
+GET http://localhost:8080/api/folders/1
+Accept: application/json
+
+### Create folder
+POST http://localhost:8080/api/folders?parentId=1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "API folder"
+}
+
+### Rename folder
+PATCH http://localhost:8080/api/folders/2
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Renamed from API"
+}
+
+### Delete folder
+DELETE http://localhost:8080/api/folders/2
+Accept: application/json
