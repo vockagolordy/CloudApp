@@ -1,5 +1,6 @@
 package org.example.cloudapp.dto;
 
+import java.io.Serializable;
 import java.time.Instant;
 
 public record StoredFileDto(
@@ -10,5 +11,5 @@ public record StoredFileDto(
         String extension,
         long size,
         Instant updatedAt
-) {
+) implements Serializable {
 }

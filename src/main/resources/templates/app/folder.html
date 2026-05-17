@@ -31,6 +31,12 @@
                     Владелец:
                     <span th:text="${email}">user@example.com</span>
                 </p>
+                <p class="muted">
+                    Занято:
+                    <span th:text="${#numbers.formatDecimal(page.storageUsedBytes / 1024.0, 1, 1)} + ' KB'">0.0 KB</span>
+                    ·
+                    <span th:text="${page.largerThanAverageFileCount} + ' крупных файлов'">0 крупных файлов</span>
+                </p>
             </div>
             <a class="secondary-action"
                th:if="${page.parent != null}"
@@ -59,7 +65,7 @@
         </div>
 
         <form th:action="@{/ajax/folders/{id}/share(id=${page.current.id})}" method="post" class="share-form"
-              th:if="${page.canDeleteCurrent}" data-ajax-share>
+              th:if="${page.canShareCurrent}" data-ajax-share>
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" name="currentId" th:value="${page.current.id}">
             <label class="sr-only" for="folder-share-email">Email пользователя</label>
@@ -151,7 +157,7 @@
             </div>
 
             <form th:action="@{/ajax/files/{id}/share(id=${file.id})}" method="post" class="share-form"
-                  th:if="${page.canDeleteCurrent}" data-ajax-share>
+                  th:if="${page.canShareCurrent}" data-ajax-share>
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <input type="hidden" name="currentId" th:value="${page.current.id}">
                 <label class="sr-only" th:for="'file-share-email-' + ${file.id}">Email пользователя</label>

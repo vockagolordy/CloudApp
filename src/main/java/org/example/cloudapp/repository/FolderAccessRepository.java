@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface FolderAccessRepository extends JpaRepository<FolderAccess, Long> {
     Optional<FolderAccess> findByFolderAndUser(Folder folder, User user);
+
+    void deleteByFolder(Folder folder);
 }

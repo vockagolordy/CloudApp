@@ -3,6 +3,7 @@ package org.example.cloudapp.config;
 import org.example.cloudapp.service.security.CloudUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +25,8 @@ public class SecurityConfig {
                         .defaultSuccessUrl("/app", true)
                         .permitAll()
                 )
+                .httpBasic(Customizer.withDefaults())
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")

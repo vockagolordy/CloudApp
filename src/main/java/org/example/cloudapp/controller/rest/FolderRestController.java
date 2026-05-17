@@ -1,6 +1,7 @@
 package org.example.cloudapp.controller.rest;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import org.example.cloudapp.dto.FolderDto;
 import org.example.cloudapp.dto.FolderPageDto;
 import org.example.cloudapp.form.FolderForm;
@@ -32,6 +33,12 @@ public class FolderRestController {
     public FolderPageDto read(@PathVariable Long id, Authentication authentication) {
         var user = userService.findByEmail(authentication.getName());
         return folderService.getFolderPage(id, user);
+    }
+
+    @GetMapping("/search")
+    public List<FolderDto> search(@RequestParam String q, Authentication authentication) {
+        var user = userService.findByEmail(authentication.getName());
+        return folderService.searchReadableFolders(q, user);
     }
 
     @PostMapping

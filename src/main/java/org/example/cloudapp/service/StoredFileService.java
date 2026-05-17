@@ -9,6 +9,7 @@ import org.example.cloudapp.exception.AppException;
 import org.example.cloudapp.form.ShareForm;
 import org.example.cloudapp.repository.StoredFileRepository;
 import org.example.cloudapp.util.mapper.StoredFileMapper;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ public class StoredFileService {
     }
 
     @Transactional
+    @CacheEvict(value = "folderPage", allEntries = true)
     public StoredFileDto upload(Long folderId, MultipartFile upload, User user) {
         if (upload.isEmpty()) {
             throw new AppException("Выберите файл для загрузки");
@@ -67,6 +69,7 @@ public class StoredFileService {
     }
 
     @Transactional
+    @CacheEvict(value = "folderPage", allEntries = true)
     public void shareFile(Long fileId, ShareForm form, User owner) {
         StoredFile file = findFile(fileId);
         User target = userService.findByEmail(form.email());

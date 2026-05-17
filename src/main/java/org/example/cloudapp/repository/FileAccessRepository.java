@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface FileAccessRepository extends JpaRepository<FileAccess, Long> {
     Optional<FileAccess> findByFileAndUser(StoredFile file, User user);
+
+    void deleteByFile(StoredFile file);
 }

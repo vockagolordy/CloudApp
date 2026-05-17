@@ -1,5 +1,6 @@
 package org.example.cloudapp.dto;
 
+import java.io.Serializable;
 import java.time.Instant;
 
 public record FolderDto(
@@ -9,5 +10,5 @@ public record FolderDto(
         boolean root,
         Instant updatedAt,
         long childCount
-) {
+) implements Serializable {
 }

@@ -24,6 +24,8 @@ spring:
     store-type: redis
   cache:
     type: redis
+    redis:
+      time-to-live: 10m
 
 server:
   error:

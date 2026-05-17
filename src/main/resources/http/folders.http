@@ -1,9 +1,22 @@
+@host = http://localhost:8080
+@email = user@example.com
+@password = password123
+@rootFolderId = 1
+@folderId = 2
+
 ### Read folder
-GET http://localhost:8080/api/folders/1
+GET {{host}}/api/folders/{{rootFolderId}}
+Authorization: Basic {{email}} {{password}}
+Accept: application/json
+
+### Search readable folders
+GET {{host}}/api/folders/search?q=api
+Authorization: Basic {{email}} {{password}}
 Accept: application/json
 
 ### Create folder
-POST http://localhost:8080/api/folders?parentId=1
+POST {{host}}/api/folders?parentId={{rootFolderId}}
+Authorization: Basic {{email}} {{password}}
 Content-Type: application/json
 Accept: application/json
 
@@ -12,7 +25,8 @@ Accept: application/json
 }
 
 ### Rename folder
-PATCH http://localhost:8080/api/folders/2
+PATCH {{host}}/api/folders/{{folderId}}
+Authorization: Basic {{email}} {{password}}
 Content-Type: application/json
 Accept: application/json
 
@@ -21,5 +35,6 @@ Accept: application/json
 }
 
 ### Delete folder
-DELETE http://localhost:8080/api/folders/2
+DELETE {{host}}/api/folders/{{folderId}}
+Authorization: Basic {{email}} {{password}}
 Accept: application/json

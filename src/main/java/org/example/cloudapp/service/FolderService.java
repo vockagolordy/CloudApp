@@ -14,6 +14,8 @@ import org.example.cloudapp.repository.FolderRepository;
 import org.example.cloudapp.repository.StoredFileRepository;
 import org.example.cloudapp.util.mapper.FolderMapper;
 import org.example.cloudapp.util.mapper.StoredFileMapper;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +54,7 @@ public class FolderService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "folderPage", key = "#p1.id + ':' + #p0")
     public FolderPageDto getFolderPage(Long folderId, User user) {
         Folder current = getReadableFolder(folderId, user);
         List<FolderDto> children = folderRepository.findByParentOrderByNameAsc(current)
@@ -60,17 +63,32 @@ public class FolderService {
                 .map(folderMapper::toDto)
                 .toList();
 
-        FolderDto parent = current.getParent() == null ? null : folderMapper.toDto(current.getParent());
+        FolderDto parent = readableParent(current, user);
         var files = storedFileRepository.findByFolderOrderByDisplayNameAsc(current).stream()
                 .filter(file -> accessService.canRead(file, user))
                 .map(storedFileMapper::toDto)
                 .toList();
         boolean canEdit = accessService.canEdit(current, user);
         boolean canDelete = accessService.isOwner(current, user) && !current.isRoot();
-        return new FolderPageDto(folderMapper.toDto(current), parent, breadcrumbs(current), children, files, canEdit, canDelete);
+        boolean canShare = accessService.isOwner(current, user);
+        long storageUsedBytes = storedFileRepository.calculateStorageUsedByOwner(current.getOwner());
+        long largerThanAverageFileCount = storedFileRepository.countOwnedFilesLargerThanAverage(current.getOwner());
+        return new FolderPageDto(
+                folderMapper.toDto(current),
+                parent,
+                breadcrumbs(current, user),
+                children,
+                files,
+                canEdit,
+                canDelete,
+                canShare,
+                storageUsedBytes,
+                largerThanAverageFileCount
+        );
     }
 
     @Transactional
+    @CacheEvict(value = "folderPage", allEntries = true)
     public FolderDto createFolder(Long parentId, String name, User user) {
         Folder parent = getEditableFolder(parentId, user);
         String normalizedName = normalizeName(name);
@@ -89,6 +107,7 @@ public class FolderService {
     }
 
     @Transactional
+    @CacheEvict(value = "folderPage", allEntries = true)
     public FolderDto renameFolder(Long folderId, String name, User user) {
         Folder folder = getEditableFolder(folderId, user);
         if (folder.isRoot()) {
@@ -102,6 +121,7 @@ public class FolderService {
     }
 
     @Transactional
+    @CacheEvict(value = "folderPage", allEntries = true)
     public Long deleteFolder(Long folderId, User user) {
         Folder folder = getReadableFolder(folderId, user);
         if (!accessService.isOwner(folder, user)) {
@@ -112,11 +132,12 @@ public class FolderService {
         }
 
         Long parentId = folder.getParent().getId();
-        deleteSubtree(folder, user);
+        deleteSubtree(folder);
         return parentId;
     }
 
     @Transactional
+    @CacheEvict(value = "folderPage", allEntries = true)
     public void shareFolder(Long folderId, ShareForm form, User owner) {
         Folder folder = getReadableFolder(folderId, owner);
         User target = userService.findByEmail(form.email());
@@ -124,14 +145,29 @@ public class FolderService {
         accessService.grantFolder(folder, target, level, owner);
     }
 
-    private void deleteSubtree(Folder folder, User user) {
+    @Transactional(readOnly = true)
+    public List<FolderDto> searchReadableFolders(String query, User user) {
+        String normalized = query == null ? "" : query.trim();
+        if (normalized.length() < 2) {
+            return List.of();
+        }
+        return folderRepository.searchReadableByName(user, normalized, 20)
+                .stream()
+                .filter(folder -> accessService.canRead(folder, user))
+                .map(folderMapper::toDto)
+                .toList();
+    }
+
+    private void deleteSubtree(Folder folder) {
         List<Folder> children = folderRepository.findByParentOrderByNameAsc(folder);
         for (Folder child : children) {
-            deleteSubtree(child, user);
+            deleteSubtree(child);
         }
         var files = storedFileRepository.findByFolderOrderByDisplayNameAsc(folder);
+        files.forEach(accessService::deleteFileAccesses);
         files.forEach(file -> storageService.delete(file.getOwner().getId(), file.getStorageKey()));
         storedFileRepository.deleteAll(files);
+        accessService.deleteFolderAccesses(folder);
         folderRepository.delete(folder);
     }
 
@@ -154,11 +190,21 @@ public class FolderService {
                 .orElseThrow(() -> new AppException("Папка не найдена"));
     }
 
-    private List<FolderDto> breadcrumbs(Folder folder) {
+    private FolderDto readableParent(Folder folder, User user) {
+        Folder parent = folder.getParent();
+        if (parent == null || !accessService.canRead(parent, user)) {
+            return null;
+        }
+        return folderMapper.toDto(parent);
+    }
+
+    private List<FolderDto> breadcrumbs(Folder folder, User user) {
         List<FolderDto> result = new ArrayList<>();
         Folder current = folder;
         while (current != null) {
-            result.add(folderMapper.toDto(current));
+            if (accessService.canRead(current, user)) {
+                result.add(folderMapper.toDto(current));
+            }
             current = current.getParent();
         }
         Collections.reverse(result);

@@ -119,6 +119,16 @@ public class AccessService {
         fileAccessRepository.save(access);
     }
 
+    @Transactional
+    public void deleteFileAccesses(StoredFile file) {
+        fileAccessRepository.deleteByFile(file);
+    }
+
+    @Transactional
+    public void deleteFolderAccesses(Folder folder) {
+        folderAccessRepository.deleteByFolder(folder);
+    }
+
     public boolean isOwner(Folder folder, User user) {
         return folder.getOwner().getId().equals(user.getId());
     }
