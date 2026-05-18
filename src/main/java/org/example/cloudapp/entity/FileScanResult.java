@@ -39,6 +39,9 @@ public class FileScanResult {
     @Column(nullable = false, length = 80)
     private String provider;
 
+    @Column(length = 120)
+    private String externalScanId;
+
     @Column(length = 500)
     private String message;
 

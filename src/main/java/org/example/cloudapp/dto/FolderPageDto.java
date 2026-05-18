@@ -8,6 +8,7 @@ public record FolderPageDto(
         FolderDto parent,
         List<FolderDto> breadcrumbs,
         List<FolderDto> children,
+        List<FolderDto> sharedFolders,
         List<StoredFileDto> files,
         boolean canEditCurrent,
         boolean canDeleteCurrent,

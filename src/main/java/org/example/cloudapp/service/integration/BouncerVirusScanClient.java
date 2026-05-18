@@ -32,7 +32,7 @@ public class BouncerVirusScanClient {
 
     public ScanResponse scan(MultipartFile file) {
         if (!enabled || !StringUtils.hasText(apiKey)) {
-            return new ScanResponse(FileScanStatus.SKIPPED, PROVIDER, "Антивирусная проверка не настроена", null);
+            return new ScanResponse(FileScanStatus.SKIPPED, PROVIDER, null, "Антивирусная проверка не настроена", null);
         }
 
         try {
@@ -49,29 +49,47 @@ public class BouncerVirusScanClient {
 
             return toScanResponse(response);
         } catch (IOException ex) {
-            return new ScanResponse(FileScanStatus.FAILED, PROVIDER, "Не удалось подготовить файл для антивирусной проверки", null);
+            return new ScanResponse(FileScanStatus.FAILED, PROVIDER, null, "Не удалось подготовить файл для антивирусной проверки", null);
         } catch (RuntimeException ex) {
-            return new ScanResponse(FileScanStatus.FAILED, PROVIDER, "Антивирусный сервис временно недоступен", null);
+            return new ScanResponse(FileScanStatus.FAILED, PROVIDER, null, "Антивирусный сервис временно недоступен", null);
+        }
+    }
+
+    public ScanResponse getResult(String scanId) {
+        if (!enabled || !StringUtils.hasText(apiKey)) {
+            return new ScanResponse(FileScanStatus.SKIPPED, PROVIDER, scanId, "Антивирусная проверка не настроена", null);
+        }
+
+        try {
+            BouncerResponse response = restClient.get()
+                    .uri("/v1/scan/{scanId}", scanId)
+                    .header("X-API-Key", apiKey)
+                    .retrieve()
+                    .body(BouncerResponse.class);
+
+            return toScanResponse(response);
+        } catch (RuntimeException ex) {
+            return new ScanResponse(FileScanStatus.FAILED, PROVIDER, scanId, "Не удалось обновить результат антивирусной проверки", null);
         }
     }
 
     private ScanResponse toScanResponse(BouncerResponse response) {
-        if (response == null || response.data() == null) {
-            return new ScanResponse(FileScanStatus.FAILED, PROVIDER, "Антивирусный сервис не вернул результат", null);
+        if (response == null) {
+            return new ScanResponse(FileScanStatus.FAILED, PROVIDER, null, "Антивирусный сервис не вернул результат", null);
         }
 
-        BouncerScanData data = response.data();
+        BouncerScanData data = response.scanData();
         String verdict = data.verdict();
         if ("clean".equalsIgnoreCase(verdict)) {
-            return new ScanResponse(FileScanStatus.CLEAN, PROVIDER, "Файл прошел антивирусную проверку", null);
+            return new ScanResponse(FileScanStatus.CLEAN, PROVIDER, data.scanId(), "Файл прошел антивирусную проверку", null);
         }
         if ("malicious".equalsIgnoreCase(verdict) || "suspicious".equalsIgnoreCase(verdict)) {
-            return new ScanResponse(FileScanStatus.INFECTED, PROVIDER, "Файл заблокирован: обнаружена угроза", threats(data.threats()));
+            return new ScanResponse(FileScanStatus.INFECTED, PROVIDER, data.scanId(), "Файл заблокирован: обнаружена угроза", threats(data.threats()));
         }
-        if ("pending".equalsIgnoreCase(data.status())) {
-            return new ScanResponse(FileScanStatus.PENDING, PROVIDER, "Файл принят на антивирусную проверку", null);
+        if ("pending".equalsIgnoreCase(data.status()) || "scanning".equalsIgnoreCase(data.status())) {
+            return new ScanResponse(FileScanStatus.PENDING, PROVIDER, data.scanId(), "Файл принят на антивирусную проверку", null);
         }
-        return new ScanResponse(FileScanStatus.FAILED, PROVIDER, "Антивирусная проверка завершилась без понятного verdict", null);
+        return new ScanResponse(FileScanStatus.FAILED, PROVIDER, data.scanId(), "Антивирусная проверка завершилась без понятного verdict", null);
     }
 
     private String threats(List<BouncerThreat> threats) {
@@ -85,13 +103,22 @@ public class BouncerVirusScanClient {
         return StringUtils.hasText(file.getOriginalFilename()) ? file.getOriginalFilename() : "upload.bin";
     }
 
-    public record ScanResponse(FileScanStatus status, String provider, String message, String threats) {
+    public record ScanResponse(FileScanStatus status, String provider, String scanId, String message, String threats) {
     }
 
     private record BouncerResponse(
             String status,
+            String verdict,
+            @JsonProperty("scan_id") String scanId,
+            List<BouncerThreat> threats,
             BouncerScanData data
     ) {
+        BouncerScanData scanData() {
+            if (data != null) {
+                return data;
+            }
+            return new BouncerScanData(scanId, status, verdict, threats);
+        }
     }
 
     private record BouncerScanData(

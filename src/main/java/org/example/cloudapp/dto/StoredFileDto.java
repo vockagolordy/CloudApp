@@ -10,8 +10,11 @@ public record StoredFileDto(
         String contentType,
         String extension,
         long size,
+        Instant createdAt,
         Instant updatedAt,
         String scanStatus,
-        String scanMessage
+        String scanMessage,
+        String scanThreats,
+        boolean scanPassed
 ) implements Serializable {
 }

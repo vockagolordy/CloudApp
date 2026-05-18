@@ -263,6 +263,12 @@ button:hover {
     grid-template-columns: minmax(220px, 1fr) minmax(320px, 420px) auto;
 }
 
+.file-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
 .folder-link,
 .file-main {
     display: flex;
@@ -313,6 +319,18 @@ button:hover {
     background: #d9a537;
 }
 
+.shared-folder-row {
+    grid-template-columns: 1fr;
+}
+
+.shared-folder-icon {
+    background: #72b7d2;
+}
+
+.shared-folder-icon::before {
+    background: #4d9bb9;
+}
+
 .file-icon {
     width: 28px;
     height: 34px;
@@ -338,6 +356,92 @@ button:hover {
 
 .danger-button:hover {
     background: #8f1b13;
+}
+
+.modal-open {
+    overflow: hidden;
+}
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(23, 32, 51, 0.42);
+}
+
+.modal-backdrop[hidden] {
+    display: none;
+}
+
+.modal {
+    width: min(100%, 560px);
+    max-height: calc(100vh - 48px);
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    box-shadow: 0 24px 70px rgba(23, 32, 51, 0.28);
+}
+
+.modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--line);
+}
+
+.modal-head h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.modal-close {
+    min-width: 38px;
+    min-height: 38px;
+    padding: 0;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--text);
+    font-size: 24px;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    background: var(--bg);
+}
+
+.metadata-list {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 8px 20px 20px;
+}
+
+.metadata-list div {
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr);
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.metadata-list div:last-child {
+    border-bottom: 0;
+}
+
+.metadata-list dt {
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.metadata-list dd {
+    margin: 0;
+    overflow-wrap: anywhere;
 }
 
 .sr-only {
@@ -376,5 +480,15 @@ button:hover {
 
     .file-row {
         grid-template-columns: 1fr;
+    }
+
+    .file-actions {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .metadata-list div {
+        grid-template-columns: 1fr;
+        gap: 4px;
     }
 }

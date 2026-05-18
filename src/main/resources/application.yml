@@ -38,6 +38,7 @@ cloudapp:
     enabled: ${VIRUS_SCAN_ENABLED:false}
     base-url: ${VIRUS_SCAN_BASE_URL:https://api.usebouncer.dev}
     api-key: ${BOUNCER_API_KEY:}
+    refresh-delay: ${VIRUS_SCAN_REFRESH_DELAY:10000}
 
 logging:
   level:

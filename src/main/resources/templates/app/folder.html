@@ -65,7 +65,7 @@
         </div>
 
         <form th:action="@{/ajax/folders/{id}/share(id=${page.current.id})}" method="post" class="share-form"
-              th:if="${page.canShareCurrent}" data-ajax-share>
+              th:if="${page.canShareCurrent && !page.current.root}" data-ajax-share>
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" name="currentId" th:value="${page.current.id}">
             <label class="sr-only" for="folder-share-email">Email пользователя</label>
@@ -136,6 +136,21 @@
         </article>
     </section>
 
+    <section class="folder-list" aria-label="Доступные мне папки"
+             th:if="${page.current.root && !#lists.isEmpty(page.sharedFolders)}">
+        <h2 class="section-title">Доступные мне папки</h2>
+
+        <article class="folder-row shared-folder-row" th:each="folder : ${page.sharedFolders}">
+            <a class="folder-link" th:href="@{/folders/{id}(id=${folder.id})}">
+                <span class="folder-icon shared-folder-icon" aria-hidden="true"></span>
+                <span>
+                    <strong th:text="${folder.name}">Общая папка</strong>
+                    <small th:text="${folder.childCount} + ' вложенных папок'">0 вложенных папок</small>
+                </span>
+            </a>
+        </article>
+    </section>
+
     <section class="folder-list" aria-label="Файлы">
         <h2 class="section-title">Файлы</h2>
         <div class="empty-state" th:if="${#lists.isEmpty(page.files)}">
@@ -148,14 +163,6 @@
                 <span class="file-icon" aria-hidden="true"></span>
                 <span>
                     <strong th:text="${file.displayName}">report.pdf</strong>
-                    <small>
-                        <span th:text="${file.contentType}">application/pdf</span>
-                        ·
-                        <span th:text="${#numbers.formatDecimal(file.size / 1024.0, 1, 1)} + ' KB'">12.0 KB</span>
-                        ·
-                        <span th:text="${file.scanStatus}">CLEAN</span>
-                    </small>
-                    <small th:if="${file.scanMessage != null}" th:text="${file.scanMessage}">Файл проверен</small>
                 </span>
             </div>
 
@@ -172,10 +179,83 @@
                 <button type="submit">Поделиться</button>
             </form>
 
-            <a class="secondary-action" th:href="@{/files/{id}/download(id=${file.id})}">Скачать</a>
+            <div class="file-actions">
+                <button type="button"
+                        class="secondary-action file-info-button"
+                        data-file-info-button
+                        th:data-name="${file.displayName}"
+                        th:data-original-name="${file.originalName}"
+                        th:data-content-type="${file.contentType}"
+                        th:data-extension="${#strings.isEmpty(file.extension) ? 'без расширения' : file.extension}"
+                        th:data-size="${#numbers.formatDecimal(file.size / 1024.0, 1, 1)} + ' KB'"
+                        th:data-created-at="${#temporals.format(file.createdAt, 'dd.MM.yyyy HH:mm')}"
+                        th:data-updated-at="${#temporals.format(file.updatedAt, 'dd.MM.yyyy HH:mm')}"
+                        th:data-scan-status="${file.scanStatus}"
+                        th:data-scan-message="${file.scanMessage}"
+                        th:data-scan-threats="${file.scanThreats == null ? 'Не обнаружены' : file.scanThreats}"
+                        th:data-scan-passed="${file.scanPassed ? 'Да' : 'Нет'}">
+                    Сведения
+                </button>
+                <a class="secondary-action" th:href="@{/files/{id}/download(id=${file.id})}">Скачать</a>
+            </div>
         </article>
     </section>
 </main>
+
+<div class="modal-backdrop" data-file-info-modal hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="file-info-title">
+        <div class="modal-head">
+            <h2 id="file-info-title">Сведения о файле</h2>
+            <button type="button" class="modal-close" data-file-info-close aria-label="Закрыть">×</button>
+        </div>
+        <dl class="metadata-list">
+            <div>
+                <dt>Название</dt>
+                <dd data-file-info-field="name"></dd>
+            </div>
+            <div>
+                <dt>Исходное имя</dt>
+                <dd data-file-info-field="originalName"></dd>
+            </div>
+            <div>
+                <dt>Тип</dt>
+                <dd data-file-info-field="contentType"></dd>
+            </div>
+            <div>
+                <dt>Расширение</dt>
+                <dd data-file-info-field="extension"></dd>
+            </div>
+            <div>
+                <dt>Размер</dt>
+                <dd data-file-info-field="size"></dd>
+            </div>
+            <div>
+                <dt>Добавлен</dt>
+                <dd data-file-info-field="createdAt"></dd>
+            </div>
+            <div>
+                <dt>Обновлен</dt>
+                <dd data-file-info-field="updatedAt"></dd>
+            </div>
+            <div>
+                <dt>Статус проверки</dt>
+                <dd data-file-info-field="scanStatus"></dd>
+            </div>
+            <div>
+                <dt>Проверка пройдена</dt>
+                <dd data-file-info-field="scanPassed"></dd>
+            </div>
+            <div>
+                <dt>Сообщение проверки</dt>
+                <dd data-file-info-field="scanMessage"></dd>
+            </div>
+            <div>
+                <dt>Угрозы</dt>
+                <dd data-file-info-field="scanThreats"></dd>
+            </div>
+        </dl>
+    </section>
+</div>
 <script th:src="@{/js/folder.js}"></script>
 </body>
 </html>

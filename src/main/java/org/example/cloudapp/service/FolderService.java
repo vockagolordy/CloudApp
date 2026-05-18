@@ -10,6 +10,7 @@ import org.example.cloudapp.entity.Folder;
 import org.example.cloudapp.entity.User;
 import org.example.cloudapp.exception.AppException;
 import org.example.cloudapp.form.ShareForm;
+import org.example.cloudapp.repository.FolderAccessRepository;
 import org.example.cloudapp.repository.FolderRepository;
 import org.example.cloudapp.repository.StoredFileRepository;
 import org.example.cloudapp.util.mapper.FolderMapper;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class FolderService {
     private final FolderRepository folderRepository;
+    private final FolderAccessRepository folderAccessRepository;
     private final FolderMapper folderMapper;
     private final StoredFileRepository storedFileRepository;
     private final StoredFileMapper storedFileMapper;
@@ -29,10 +31,11 @@ public class FolderService {
     private final AccessService accessService;
     private final UserService userService;
 
-    public FolderService(FolderRepository folderRepository, FolderMapper folderMapper,
+    public FolderService(FolderRepository folderRepository, FolderAccessRepository folderAccessRepository, FolderMapper folderMapper,
                          StoredFileRepository storedFileRepository, StoredFileMapper storedFileMapper,
                          StorageService storageService, AccessService accessService, UserService userService) {
         this.folderRepository = folderRepository;
+        this.folderAccessRepository = folderAccessRepository;
         this.folderMapper = folderMapper;
         this.storedFileRepository = storedFileRepository;
         this.storedFileMapper = storedFileMapper;
@@ -54,7 +57,7 @@ public class FolderService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "folderPage", key = "#p1.id + ':' + #p0")
+    @Cacheable(value = "folderPage", key = "#p1.id + ':' + #p0", unless = "#result.current.root")
     public FolderPageDto getFolderPage(Long folderId, User user) {
         Folder current = getReadableFolder(folderId, user);
         List<FolderDto> children = folderRepository.findByParentOrderByNameAsc(current)
@@ -78,6 +81,7 @@ public class FolderService {
                 parent,
                 breadcrumbs(current, user),
                 children,
+                sharedFolders(current, user),
                 files,
                 canEdit,
                 canDelete,
@@ -140,6 +144,9 @@ public class FolderService {
     @CacheEvict(value = "folderPage", allEntries = true)
     public void shareFolder(Long folderId, ShareForm form, User owner) {
         Folder folder = getReadableFolder(folderId, owner);
+        if (folder.isRoot()) {
+            throw new AppException("Корневую папку нельзя открыть для общего доступа");
+        }
         User target = userService.findByEmail(form.email());
         AccessLevel level = form.accessLevel() == null ? AccessLevel.READ : form.accessLevel();
         accessService.grantFolder(folder, target, level, owner);
@@ -209,6 +216,20 @@ public class FolderService {
         }
         Collections.reverse(result);
         return result;
+    }
+
+    private List<FolderDto> sharedFolders(Folder current, User user) {
+        if (!current.isRoot() || !accessService.isOwner(current, user)) {
+            return List.of();
+        }
+        return folderAccessRepository.findByUserOrderByCreatedAtDesc(user)
+                .stream()
+                .map(access -> access.getFolder())
+                .filter(folder -> !accessService.isOwner(folder, user))
+                .filter(folder -> !folder.isRoot())
+                .filter(folder -> accessService.canRead(folder, user))
+                .map(folderMapper::toDto)
+                .toList();
     }
 
     private String normalizeName(String name) {

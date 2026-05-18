@@ -70,3 +70,63 @@ document.querySelectorAll("[data-ajax-share]").forEach((form) => {
         }
     });
 });
+
+const fileInfoModal = document.querySelector("[data-file-info-modal]");
+const fileInfoClose = document.querySelector("[data-file-info-close]");
+const fileInfoFields = fileInfoModal
+    ? Object.fromEntries(
+        Array.from(fileInfoModal.querySelectorAll("[data-file-info-field]"))
+            .map((field) => [field.dataset.fileInfoField, field])
+    )
+    : {};
+
+function setFileInfoField(name, value) {
+    if (fileInfoFields[name]) {
+        fileInfoFields[name].textContent = value || "—";
+    }
+}
+
+function closeFileInfoModal() {
+    if (fileInfoModal) {
+        fileInfoModal.hidden = true;
+        document.body.classList.remove("modal-open");
+    }
+}
+
+document.querySelectorAll("[data-file-info-button]").forEach((button) => {
+    button.addEventListener("click", () => {
+        if (!fileInfoModal) {
+            return;
+        }
+
+        setFileInfoField("name", button.dataset.name);
+        setFileInfoField("originalName", button.dataset.originalName);
+        setFileInfoField("contentType", button.dataset.contentType);
+        setFileInfoField("extension", button.dataset.extension);
+        setFileInfoField("size", button.dataset.size);
+        setFileInfoField("createdAt", button.dataset.createdAt);
+        setFileInfoField("updatedAt", button.dataset.updatedAt);
+        setFileInfoField("scanStatus", button.dataset.scanStatus);
+        setFileInfoField("scanPassed", button.dataset.scanPassed);
+        setFileInfoField("scanMessage", button.dataset.scanMessage);
+        setFileInfoField("scanThreats", button.dataset.scanThreats);
+
+        fileInfoModal.hidden = false;
+        document.body.classList.add("modal-open");
+        fileInfoClose?.focus();
+    });
+});
+
+fileInfoClose?.addEventListener("click", closeFileInfoModal);
+
+fileInfoModal?.addEventListener("click", (event) => {
+    if (event.target === fileInfoModal) {
+        closeFileInfoModal();
+    }
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+        closeFileInfoModal();
+    }
+});
