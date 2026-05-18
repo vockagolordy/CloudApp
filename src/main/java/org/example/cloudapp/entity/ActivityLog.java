@@ -45,4 +45,21 @@ public class ActivityLog {
     void onCreate() {
         createdAt = Instant.now();
     }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        }
+        if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        ActivityLog that = (ActivityLog) object;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }
