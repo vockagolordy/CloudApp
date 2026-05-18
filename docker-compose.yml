@@ -10,6 +10,8 @@ services:
       DB_PASSWORD: cloudapp
       REDIS_HOST: redis
       CLOUDAPP_STORAGE_ROOT: /storage
+      VIRUS_SCAN_ENABLED: ${VIRUS_SCAN_ENABLED:-false}
+      BOUNCER_API_KEY: ${BOUNCER_API_KEY:-}
     ports:
       - "8080:8080"
     volumes:

@@ -25,16 +25,19 @@ public class StoredFileService {
     private final StoredFileMapper storedFileMapper;
     private final AccessService accessService;
     private final UserService userService;
+    private final FileScanService fileScanService;
 
     public StoredFileService(StoredFileRepository storedFileRepository, StorageService storageService,
                              FolderService folderService, StoredFileMapper storedFileMapper,
-                             AccessService accessService, UserService userService) {
+                             AccessService accessService, UserService userService,
+                             FileScanService fileScanService) {
         this.storedFileRepository = storedFileRepository;
         this.storageService = storageService;
         this.folderService = folderService;
         this.storedFileMapper = storedFileMapper;
         this.accessService = accessService;
         this.userService = userService;
+        this.fileScanService = fileScanService;
     }
 
     @Transactional
@@ -58,12 +61,15 @@ public class StoredFileService {
         file.setSize(upload.getSize());
         file.setOwner(folder.getOwner());
         file.setFolder(folder);
-        return storedFileMapper.toDto(storedFileRepository.save(file));
+        StoredFile saved = storedFileRepository.save(file);
+        fileScanService.scanAndSave(saved, upload);
+        return storedFileMapper.toDto(saved);
     }
 
     @Transactional(readOnly = true)
     public DownloadedFile download(Long fileId, User user) {
         StoredFile file = getReadableFile(fileId, user);
+        fileScanService.requireDownloadAllowed(file);
         Resource resource = storageService.load(file.getOwner().getId(), file.getStorageKey());
         return new DownloadedFile(file.getDisplayName(), file.getContentType(), resource);
     }

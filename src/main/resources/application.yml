@@ -34,6 +34,10 @@ server:
 
 cloudapp:
   storage-root: ${CLOUDAPP_STORAGE_ROOT:storage}
+  virus-scan:
+    enabled: ${VIRUS_SCAN_ENABLED:false}
+    base-url: ${VIRUS_SCAN_BASE_URL:https://api.usebouncer.dev}
+    api-key: ${BOUNCER_API_KEY:}
 
 logging:
   level:

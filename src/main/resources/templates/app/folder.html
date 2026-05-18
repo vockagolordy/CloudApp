@@ -152,7 +152,10 @@
                         <span th:text="${file.contentType}">application/pdf</span>
                         ·
                         <span th:text="${#numbers.formatDecimal(file.size / 1024.0, 1, 1)} + ' KB'">12.0 KB</span>
+                        ·
+                        <span th:text="${file.scanStatus}">CLEAN</span>
                     </small>
+                    <small th:if="${file.scanMessage != null}" th:text="${file.scanMessage}">Файл проверен</small>
                 </span>
             </div>
 
